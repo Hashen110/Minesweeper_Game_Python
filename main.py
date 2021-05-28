@@ -1,48 +1,88 @@
-import tkinter
 from random import randrange
-from tkinter import messagebox
 
-root = tkinter.Tk()
-root.title('Minesweeper')
-root.geometry('1000x800')
-
-board = [[None for i in range(10)] for j in range(10)]
-is_game_over = False
+BOARD = []
+IS_GAME_OVER = False
+MINE_COUNT = -1
 
 
-def on_box_click(event):
-    global is_game_over
-    if not is_game_over:
-        if event.widget.cget('text') == 'X':
-            messagebox.showwarning(title='Alert', message='You Lose...!')
-            is_game_over = True
+def print_board(show_mines):
+    for i in range(MINE_COUNT):
+        for _ in range(MINE_COUNT):
+            print('+---', end='')
+        print('+')
+        for j in range(MINE_COUNT):
+            if not show_mines:
+                if BOARD[i][j] == 'X':
+                    print('!   ', end='')
+                    continue
+            print('| ' + BOARD[i][j] + ' ', end='')
+        print('|')
+    for _ in range(MINE_COUNT):
+        print('+---', end='')
+    print('+')
 
 
-def create_game():
-    for _ in range(10):
-        row = randrange(10)
-        col = randrange(10)
-        button = tkinter.Button(root, text='X', fg='red', borderwidth=1, width=9, height=3)
-        button.grid(row=row, column=col)
-        button.bind('<Button-1>', on_box_click)
-        board[row][col] = button
-    for i in range(10):
-        for j in range(10):
-            if board[i][j] is None:
-                button = tkinter.Button(root, text=' ', borderwidth=1, width=9, height=3)
-                button.grid(row=i, column=j)
-                button.bind('<Button-1>', on_box_click)
+def generate_board():
+    global MINE_COUNT
+    while MINE_COUNT < 10:
+        try:
+            MINE_COUNT = int(input('Enter number of mines you want? (minimum is 10) : '))
+        except ValueError:
+            print('Please enter a number')
+    print('\n')
+    global BOARD
+    BOARD = [[' ' for _ in range(MINE_COUNT)] for _ in range(MINE_COUNT)]
+    for _ in range(MINE_COUNT):
+        BOARD[randrange(MINE_COUNT)][randrange(MINE_COUNT)] = 'X'
 
 
-def new_game():
-    global board
-    board = [[None for _ in range(10)] for _ in range(10)]
-    create_game()
+def game():
+    generate_board()
+    global IS_GAME_OVER
+    while not IS_GAME_OVER:
+        print('Please enter row and column')
+        row = -1
+        while row < 0 or row > MINE_COUNT - 1:
+            try:
+                print('Please enter value between 0-9')
+                row = int(input('\tRow: '))
+            except ValueError:
+                print('Please enter a number')
+        column = -1
+        while column < 0 or column > MINE_COUNT - 1:
+            try:
+                print('Please enter value between 0-9')
+                column = int(input('\tColumn: '))
+            except ValueError:
+                print('Please enter a number')
+        if BOARD[row][column] == 'X':
+            print_board(True)
+            IS_GAME_OVER = True
+            print('\033[93mGame Over\033[93m')
+            print('\033[91mYou Lose..!\033[91m')
+        else:
+            if BOARD[row][column] == ' ':
+                BOARD[row][column] = 'C'
+                is_win = True
+                for i in range(MINE_COUNT):
+                    for j in range(MINE_COUNT):
+                        if BOARD[i][j] == ' ':
+                            is_win = False
+                if is_win:
+                    print_board(True)
+                    IS_GAME_OVER = True
+                    print('\033[93mGame Over\033[93m')
+                    print('\033[94mYou Win..!\033[94m')
+                else:
+                    mines = 0
+                    for i in range(max(row - 1, 0), min(row + 1, MINE_COUNT - 1) + 1):
+                        for j in range(max(column - 1, 0), min(column + 1, MINE_COUNT - 1) + 1):
+                            if BOARD[i][j] == 'X':
+                                mines += 1
+                    BOARD[row][column] = str(mines)
+                    print_board(False)
+            else:
+                print('\033[93mYou already clicked that box\033[93m')
 
 
-def main():
-    create_game()
-    root.mainloop()
-
-
-main()
+game()
